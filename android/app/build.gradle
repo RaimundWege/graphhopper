@@ -63,5 +63,4 @@ dependencies {
 
     implementation 'com.android.support:multidex:1.0.3'
     implementation 'com.graphhopper:graphhopper-reader-gtfs:0.11.0'
-    implementation 'org.mapdb:mapdb:1.0.9'
 }
