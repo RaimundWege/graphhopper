@@ -1,5 +1,6 @@
 package com.graphhopper.android;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -25,8 +26,16 @@ import android.widget.Toast;
 
 import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
-import com.graphhopper.GraphHopper;
 import com.graphhopper.PathWrapper;
+import com.graphhopper.reader.gtfs.GraphHopperGtfs;
+import com.graphhopper.reader.gtfs.GtfsStorage;
+import com.graphhopper.reader.gtfs.PtFlagEncoder;
+import com.graphhopper.routing.util.CarFlagEncoder;
+import com.graphhopper.routing.util.EncodingManager;
+import com.graphhopper.routing.util.FootFlagEncoder;
+import com.graphhopper.storage.GHDirectory;
+import com.graphhopper.storage.GraphHopperStorage;
+import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.util.Constants;
 import com.graphhopper.util.Helper;
 import com.graphhopper.util.Parameters.Algorithms;
@@ -57,6 +66,7 @@ import org.oscim.tiling.source.mapfile.MapFileTileSource;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +75,7 @@ import java.util.TreeMap;
 public class MainActivity extends Activity {
     private static final int NEW_MENU_ID = Menu.FIRST + 1;
     private MapView mapView;
-    private GraphHopper hopper;
+    private GraphHopperGtfs hopper;
     private GeoPoint start;
     private GeoPoint end;
     private Spinner localSpinner;
@@ -164,8 +174,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (hopper != null)
-            hopper.close();
+
+        // TODO: close storage
+        //if (hopper != null)
+        //    hopper.close();
 
         hopper = null;
         // necessary?
@@ -375,19 +387,35 @@ public class MainActivity extends Activity {
         loadGraphStorage();
     }
 
+    @SuppressLint("StaticFieldLeak")
     void loadGraphStorage() {
         logUser("loading graph (" + Constants.VERSION + ") ... ");
         new GHAsyncTask<Void, Void, Path>() {
             protected Path saveDoInBackground(Void... v) throws Exception {
-                GraphHopper tmpHopp = new GraphHopper().forMobile();
-                tmpHopp.load(new File(mapsFolder, currentArea).getAbsolutePath() + "-gh");
-                log("found graph " + tmpHopp.getGraphHopperStorage().toString() + ", nodes:" + tmpHopp.getGraphHopperStorage().getNodes());
+                String path = new File(mapsFolder, currentArea).getAbsolutePath() + "-gh";
+                final PtFlagEncoder ptFlagEncoder = new PtFlagEncoder();
+                final FootFlagEncoder footFlagEncoder = new FootFlagEncoder();
+                final CarFlagEncoder carFlagEncoder = new CarFlagEncoder();
+                EncodingManager encodingManager = new EncodingManager(Arrays.asList(ptFlagEncoder, footFlagEncoder, carFlagEncoder), 8);
+                GHDirectory directory = GraphHopperGtfs.createGHDirectory(mapsFolder.getAbsolutePath() + "/graph-cache");
+                GtfsStorage gtfsStorage = GraphHopperGtfs.createGtfsStorage();
+                GraphHopperStorage graphHopperStorage = GraphHopperGtfs.createOrLoad(directory,
+                        encodingManager, ptFlagEncoder, gtfsStorage,
+                        Collections.singleton(path + "/cochabamba-gtfs.zip"),
+                        Collections.<String>emptyList());
+                LocationIndex locationIndex = GraphHopperGtfs.createOrLoadIndex(directory, graphHopperStorage);
+                GraphHopperGtfs tmpHopp = GraphHopperGtfs.createFactory(ptFlagEncoder,
+                        GraphHopperGtfs.createTranslationMap(), graphHopperStorage, locationIndex,
+                        gtfsStorage)
+                        .createWithoutRealtimeFeed();
+                tmpHopp.load(path);
                 hopper = tmpHopp;
                 return null;
             }
 
             protected void onPostExecute(Path o) {
                 if (hasError()) {
+                    getError().printStackTrace();
                     logUser("An error happened while creating graph:"
                             + getErrorMessage());
                 } else {
