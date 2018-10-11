@@ -45,6 +45,7 @@ dependencies {
        exclude group: 'com.google.protobuf', module: 'protobuf-java'
        exclude group: 'org.openstreetmap.osmosis', module: 'osmosis-osm-binary'
        exclude group: 'org.apache.xmlgraphics', module: 'xmlgraphics-commons'
+       exclude group: 'com.vividsolutions', module: 'jts-core'
     }
 
     implementation 'org.mapsforge:vtm:0.9.2'
@@ -62,5 +63,10 @@ dependencies {
     implementation 'org.slf4j:slf4j-android:1.7.25'
 
     implementation 'com.android.support:multidex:1.0.3'
-    implementation 'com.graphhopper:graphhopper-reader-gtfs:0.11.0'
+    compile group: 'com.google.transit', name: 'gtfs-realtime-bindings', version: '0.0.4'
+    compile group: 'com.google.guava', name: 'guava', version: '24.0-android'
+    compile group: 'net.sourceforge.javacsv', name: 'javacsv', version: '2.0'
+    compile group: 'commons-io', name: 'commons-io', version: '2.4'
+    compile group: 'org.mapdb', name: 'mapdb', version: '1.0.8'
+    compile group: 'org.openstreetmap.osmosis', name: 'osmosis-osm-binary', version: '0.47'
 }
