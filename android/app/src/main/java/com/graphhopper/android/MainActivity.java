@@ -38,6 +38,7 @@ import com.graphhopper.storage.GraphHopperStorage;
 import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.util.Constants;
 import com.graphhopper.util.Helper;
+import com.graphhopper.util.Parameters;
 import com.graphhopper.util.Parameters.Algorithms;
 import com.graphhopper.util.Parameters.Routing;
 import com.graphhopper.util.PointList;
@@ -402,13 +403,13 @@ public class MainActivity extends Activity {
                 GraphHopperStorage graphHopperStorage = GraphHopperGtfs.createOrLoad(directory,
                         encodingManager, ptFlagEncoder, gtfsStorage,
                         Collections.singleton(path + "/cochabamba-gtfs.zip"),
-                        Collections.<String>emptyList());
+                        Collections.emptyList());
                 LocationIndex locationIndex = GraphHopperGtfs.createOrLoadIndex(directory, graphHopperStorage);
                 GraphHopperGtfs tmpHopp = GraphHopperGtfs.createFactory(ptFlagEncoder,
                         GraphHopperGtfs.createTranslationMap(), graphHopperStorage, locationIndex,
                         gtfsStorage)
                         .createWithoutRealtimeFeed();
-                tmpHopp.load(path);
+                //tmpHopp.load(path);
                 hopper = tmpHopp;
                 return null;
             }
@@ -470,6 +471,8 @@ public class MainActivity extends Activity {
                         setAlgorithm(Algorithms.DIJKSTRA_BI);
                 req.getHints().
                         put(Routing.INSTRUCTIONS, "false");
+                req.getHints().
+                        put(Parameters.PT.EARLIEST_DEPARTURE_TIME, "2018-01-01T00:00:00.00Z");
                 GHResponse resp = hopper.route(req);
                 time = sw.stop().getSeconds();
                 return resp.getBest();
